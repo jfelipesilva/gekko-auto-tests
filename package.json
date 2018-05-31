@@ -1,0 +1,24 @@
+{
+  "name": "gekko-auto-tests",
+  "version": "1.0.0",
+  "description": "This project automates the backtest tool from gekko running as many tests you  define automatically, by cicling through variables possibilities from strategies you own or from strategies that cames with it.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jfelipesilva/gekko-auto-tests.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jfelipesilva/gekko-auto-tests/issues"
+  },
+  "homepage": "https://github.com/jfelipesilva/gekko-auto-tests#readme",
+  "dependencies": {
+    "mysql": "^2.15.0",
+    "node-cmd": "^3.0.0"
+  }
+}
