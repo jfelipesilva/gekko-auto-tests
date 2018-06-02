@@ -19,6 +19,7 @@
   "homepage": "https://github.com/jfelipesilva/gekko-auto-tests#readme",
   "dependencies": {
     "mysql": "^2.15.0",
-    "node-cmd": "^3.0.0"
+    "node-cmd": "^3.0.0",
+    "js-combinatorics": "^0.5.3"
   }
 }
