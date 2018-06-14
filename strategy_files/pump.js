@@ -196,6 +196,14 @@ strat.check = function(candle) {
 
         }
     }
+
+    if(moment.utc(this.dateRange.to).format() <= moment.utc(candle.start).format()){
+        this.marketBalance = (candle.close / this.firstCandlePrice)*100;
+        mysql_conn.query('UPDATE backtests SET marketProfit = "'+convertToPercentage(this.marketBalance)+'" WHERE id = '+backtest_id, function(err){
+            if (err) throw err;
+            //console.log("Result: " + result);
+        });
+    }
 }
 
 function convertToPercentage(value){
