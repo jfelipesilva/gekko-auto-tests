@@ -28,7 +28,7 @@ let configFile = "";
 -----------------------------------------------------------------*/
 
 let process_limit = 1; //how many backtests one job should run
-let time_between_backtests = 40; //seconds between each backtest for one particular job
+let time_between_backtests = 5; //seconds between each backtest for one particular job
 
 //--------------------------------------------------------------------------------------------*/
 
