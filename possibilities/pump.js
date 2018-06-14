@@ -32,7 +32,7 @@ let files_id = "";
 
   var value = 1.01;
   var value1 = value;
-  while(value <= 1.1){
+  while(value <= 1.09){
       percentages.push(value1);
       value = value +0.002;
       value1 = value.toFixed(3);
@@ -40,11 +40,11 @@ let files_id = "";
 
   var entrances = [];
 
-  value = 1.001;
+  value = 1.002;
   value1 = value;
-  while(value <= 1.013){
+  while(value <= 1.004){
       entrances.push(value1);
-      value = value +0.001;
+      value = value +0.0002;
       value1 = value.toFixed(4);
   }
 
