@@ -73,11 +73,13 @@ mysql_conn.query('INSERT INTO files (pair, dateFrom, dateTo, config_js, strategy
     mysql_conn.end();
     if (err) throw err;
     files_id = result.insertId;
-    if (fs.existsSync(APP_DIR+'mysql_tasks.sql')) {
+    if(fs.existsSync(APP_DIR+'mysql_tasks.sql')) {
       fs.unlink(APP_DIR+'mysql_tasks.sql', (err) => {
           if (err) throw err;
           strategy(combinationTotal);
       });
+    }else{
+      strategy(combinationTotal);
     }
     
 });
