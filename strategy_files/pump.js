@@ -117,7 +117,6 @@ strat.check = function(candle) {
                 if(this.candleMonitor.secondCandle == 0 && this.candleMonitor.thirdCandle == 0 && candle.close < this.candleMonitor.lastCandlePrice){
                     this.tradeDataTrendMarket = 'bearish';
                     this.tradesInBearMarket++;
-                    console.log("Bought in Bearish Market at price "+this.tradeData.buyPrice);
                 }else{
                     this.tradesInBullMarket++;
                 }
@@ -125,11 +124,12 @@ strat.check = function(candle) {
                 if(this.candleMonitor.secondCandle == 1 && this.candleMonitor.thirdCandle == 1 && candle.close > this.candleMonitor.lastCandlePrice){
                     this.tradeDataTrendMarket = 'bullish';
                     this.tradesInBullMarket++;
-                    console.log("Bought in Bullish Market at price "+this.tradeData.buyPrice);
                 }else{
                     this.tradesInBearMarket++;
                 }
             }
+
+            console.log("Bought in "+this.tradeDataTrendMarket+" market at price "+this.tradeData.buyPrice);
         }
 
     } else {
