@@ -20,26 +20,15 @@ config.tradingAdvisor = {
   historySize: 0,
 }
 
-/*
-config.automated_strat = {
-  "entrance":1.0033,
-  "target":1.072,
-  "loss":1.011
-}
-*/
 
-//THE FOLLOWING LINE WILL BE CHANGED WITH THE PROPER CONFIGURATION.
-/*{[config.automated_strat]}*/
+config.automated_strat = {[input_automatedStrat]};
 
 config.backtest = {
   //daterange: 'scan',
-  /*
   daterange: {
-    from: '2018-02-08 12:00',
-    to: '2018-05-22 00:00'
+    from: '{[input_daterangeFrom]}',
+    to: '{[input_daterangeTo]}'
   },
-  */
-  /*{[daterange]}*/,
   batchSize: 50
 }
 

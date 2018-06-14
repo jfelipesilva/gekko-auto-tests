@@ -1,27 +1,27 @@
-require('dotenv').config();
 var _ = require('lodash');
 var log = require('../core/log');
 const moment = require('moment');
 const config = require('../core/util').getConfig();
 const mysql = require('mysql');
 const mysql_conf = {  
-    host     : process.env.DB_HOST,
-    user     : process.env.DB_USER,
-    password : process.env.DB_PASS,
-    database : process.env.DB_DARTABASE
+    host     : "{[input_dbhost]}",
+    user     : "{[input_dbuser]}",
+    password : "{[input_dbpass]}",
+    database : "{[input_database]}"
 }
 const mysql_conn = mysql.createConnection(mysql_conf);
-const configs_id
+const backtest_id = "{[input_backtest_id]}";
+const initialBalance = 100;
 var strat = {};
 strat.init = function() {
     this.dateRange = config.backtest.daterange;
     this.mysql_query = [];
     this.tradeData = {};
-    this.tradeData.balance = 100;
-    this.tradeData.bearishBalance = 100;
-    this.tradeData.bullishBalance = 100;
+    this.marketBalance = initialBalance;
+    this.tradeData.balance = initialBalance;
+    this.tradeData.bearishBalance = initialBalance;
+    this.tradeData.bullishBalance = initialBalance;
     this.firstCandlePrice = 0;
-    this.marketBalance = 100;
     this.discounts = (config.paperTrader.feeMaker + config.paperTrader.slippage) / 100 + 1;
     this.input = 'candle';
     this.currentTrend = 'short';
@@ -32,6 +32,9 @@ strat.init = function() {
     this.exit = this.settings.target;
     this.loss = this.settings.loss;
     this.trail = 0;
+    this.tradesTotal = 0;
+    this.tradesInBullMarket= 0;
+    this.tradesInBearMarket = 0;
     this.currentMarketTrend = "bear" //  bearish or bullish
 
     // everytime last 3 candles is equal to 1 change to bull market
@@ -43,6 +46,7 @@ strat.init = function() {
         thirdCandle: 0,
         lastCandlePrice: 0
     }
+    console.log("BACKTEST INICIADO!");
 }
 
 // What happens on every new candle?
@@ -62,11 +66,7 @@ strat.check = function(candle) {
     if(moment.utc(this.dateRange.from).format() >= moment.utc(candle.start).format()){
         //https://forum.gekko.wizb.it/thread-1440.html?highlight=finished
         this.firstCandlePrice = candle.close;
-
-        mysql_conn.query('UPDATE configs SET executedAt = NOW() WHERE id = '+configs_id, function(err){
-            if (err) throw err;
-            //console.log("Result: " + result);
-        });
+        console.log("Initial Price: "+this.firstCandlePrice);
     }
 
     let candleCheck = candle.start % this.candleMonitor.divisor;
@@ -88,13 +88,13 @@ strat.check = function(candle) {
             if(this.currentMarketTrend == 'bullish'){
                 this.currentMarketTrend = 'bearish';
 
-                //console.log(this.candleMonitor.thirdCandle+' '+this.candleMonitor.secondCandle+' '+this.candleMonitor.firstCandle+' alterou para tendencia de queda em '+moment.utc(candle.start).format());
+                console.log(this.candleMonitor.thirdCandle+' '+this.candleMonitor.secondCandle+' '+this.candleMonitor.firstCandle+' alterou para tendencia de queda em '+moment.utc(candle.start).format());
             }
         }
         if(this.candleMonitor.thirdCandle == 1 && this.candleMonitor.secondCandle == 1 && this.candleMonitor.firstCandle == 1){
             if(this.currentMarketTrend == 'bearish'){
                 this.currentMarketTrend = 'bullish';
-                //console.log(this.candleMonitor.thirdCandle+' '+this.candleMonitor.secondCandle+' '+this.candleMonitor.firstCandle+' alterou para tendencia de alta em '+moment.utc(candle.start).format());
+                console.log(this.candleMonitor.thirdCandle+' '+this.candleMonitor.secondCandle+' '+this.candleMonitor.firstCandle+' alterou para tendencia de alta em '+moment.utc(candle.start).format());
             }
         }
     }
@@ -108,6 +108,7 @@ strat.check = function(candle) {
             this.openPrice = candle.close;
             this.stop = candle.open / this.loss;
             this.trail = 0;
+            this.tradesTotal++;
             this.tradeData.buyAt = moment.utc(candle.start).format("YYYY-MM-DD HH:mm:ss");
             this.tradeData.buyPrice = candle.close * this.discounts;
             this.tradeDataTrendMarket = this.currentMarketTrend;
@@ -115,10 +116,18 @@ strat.check = function(candle) {
             if(this.currentMarketTrend == 'bullish'){
                 if(this.candleMonitor.secondCandle == 0 && this.candleMonitor.thirdCandle == 0 && candle.close < this.candleMonitor.lastCandlePrice){
                     this.tradeDataTrendMarket = 'bearish';
+                    this.tradesInBearMarket++;
+                    console.log("Bought in Bearish Market at price "+this.tradeData.buyPrice);
+                }else{
+                    this.tradesInBullMarket++;
                 }
             }else{
                 if(this.candleMonitor.secondCandle == 1 && this.candleMonitor.thirdCandle == 1 && candle.close > this.candleMonitor.lastCandlePrice){
                     this.tradeDataTrendMarket = 'bullish';
+                    this.tradesInBullMarket++;
+                    console.log("Bought in Bullish Market at price "+this.tradeData.buyPrice);
+                }else{
+                    this.tradesInBearMarket++;
                 }
             }
         }
@@ -180,13 +189,17 @@ strat.check = function(candle) {
                 this.tradeData.bearishBalance += this.tradeData.profit;
             }
 
-            mysql_conn.query('UPDATE configs SET strategyProfit = "'+this.tradeData.balance+'", marketProfit = "'+this.marketBalance+'", inBullMarketProfit = "'+this.tradeData.bullishBalance+'", inBearMarketProfit = "'+this.tradeData.bearishBalance+'" WHERE id = '+configs_id, function(err){
+            mysql_conn.query('UPDATE backtests SET strategyProfit = "'+convertToPercentage(this.tradeData.balance)+'", marketProfit = "'+convertToPercentage(this.marketBalance)+'", inBullMarketProfit = "'+convertToPercentage(this.tradeData.bullishBalance)+'", inBearMarketProfit = "'+convertToPercentage(this.tradeData.bearishBalance)+'", totalTrades = '+this.tradesTotal+', tradesInBullMarket = '+this.tradesInBullMarket+', tradesInBearMarket = '+this.tradesInBearMarket+' WHERE id = '+backtest_id, function(err){
                 if (err) throw err;
                 //console.log("Result: " + result);
             });
 
         }
     }
+}
+
+function convertToPercentage(value){
+    return (100/(initialBalance/value))-100;
 }
 
 module.exports = strat;

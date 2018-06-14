@@ -20,12 +20,12 @@ let files_id = "";
   let watch = {
     "exchange": "binance",
     "currency": "USDT",
-    "asset": "NEO"
+    "asset": "BTC"
   }
 
   let daterange = {
     "from": '2018-02-08 12:00',
-    "to": '2018-05-22 00:00'
+    "to": '2018-06-13 00:00'
   }
 
   var percentages = [];
@@ -56,7 +56,8 @@ let files_id = "";
 
   let CONFIG_FILE = fs.readFileSync(APP_DIR+"config_files/config.js").toString();
   CONFIG_FILE = CONFIG_FILE.replace("/*{[config.watch]}*/","config.watch = "+JSON.stringify(watch));
-  CONFIG_FILE = CONFIG_FILE.replace("/*{[daterange]}*/","daterange: "+JSON.stringify(daterange));
+  CONFIG_FILE = CONFIG_FILE.replace("{[input_daterangeFrom]}",daterange.from);
+  CONFIG_FILE = CONFIG_FILE.replace("{[input_daterangeTo]}",daterange.to);
 
   const STRATEGY_FILE = fs.readFileSync(APP_DIR+"strategy_files/pump.js").toString();
 
@@ -68,7 +69,7 @@ let files_id = "";
 
 
 mysql_conn = mysql.createConnection(mysql_conf);
-mysql_conn.query('INSERT INTO files (config_js, strategy_js) VALUES ('+mysql_conn.escape(CONFIG_FILE)+','+mysql_conn.escape(STRATEGY_FILE)+')', function(err, result){
+mysql_conn.query('INSERT INTO files (pair, dateFrom, dateTo, config_js, strategy_js) VALUES ("'+watch.asset+'/'+watch.currency+'","'+daterange.from+'","'+daterange.to+'",'+mysql_conn.escape(CONFIG_FILE)+','+mysql_conn.escape(STRATEGY_FILE)+')', function(err, result){
     mysql_conn.end();
     if (err) throw err;
     files_id = result.insertId;
@@ -95,7 +96,7 @@ const strategy = (array = []) => {
         const result =  writeDoc(item);
         //console.log(result);
 
-        const tempInsert = "INSERT INTO configs (config_json,files_id) VALUES ('"+JSON.stringify(result)+"','"+JSON.stringify(watch)+"','"+JSON.stringify(daterange)+"',"+files_id+");\n";
+        const tempInsert = "INSERT INTO backtests (config_json,files_id) VALUES ('"+JSON.stringify(result)+"',"+files_id+");\n";
 
         fs.appendFileSync(APP_DIR+'mysql_tasks.sql',tempInsert, 'utf8');
     });
