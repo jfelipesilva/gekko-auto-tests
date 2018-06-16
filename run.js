@@ -91,6 +91,10 @@ function run(configuration){
     strategyFile = strategyFile.replace("{[input_backtest_id]}",configuration.id);
     fs.writeFileSync(GEKKO_DIR+'strategies/automated_strat.js',strategyFile, 'utf8');
 
+    let log = "DB_HOST="+mysql_conf.host+"\n";
+    log += "Config="+configuration.config_json;
+    fs.writeFileSync(GEKKO_DIR+'run.log', 'utf8');
+
     //config file handling
     configFile = configFile.replace("{[input_automatedStrat]}",configuration.config_json);
     fs.writeFileSync(GEKKO_DIR+'automated_config.js',configFile, 'utf8');
