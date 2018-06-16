@@ -2,5 +2,6 @@
 
 .env
 mysql_tasks.sql
+sftp-config.json
 
 node_modules

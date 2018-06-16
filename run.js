@@ -14,8 +14,8 @@ const mysql_conf = {
 let mysql_conn = "";
 let count = 0;
 let select_result = [];
-let strategyFile = "";
-let configFile = "";
+let strategyFileOriginal = "";
+let configFileOriginal = "";
 
 /*--------------------------
     TO AUTOMATE YOU SHOULD SETUP CRONTAB TO RUN THIS JOB EACH MINUTE.
@@ -27,8 +27,8 @@ let configFile = "";
     YOU CAN BALANCE THIS AJUSTING THE TIME BETWEEN EACH BACKTEST. 
 -----------------------------------------------------------------*/
 
-let process_limit = 1; //how many backtests one job should run
-let time_between_backtests = 5; //seconds between each backtest for one particular job
+let process_limit = 4; //how many backtests one job should run
+let time_between_backtests = 15; //seconds between each backtest for one particular job
 
 //--------------------------------------------------------------------------------------------*/
 
@@ -43,11 +43,25 @@ function start(){
         if(result.length == 0){
             console.log("no backtests to run");
         }else{
-            console.log("initiating "+result.length+" backtests");
-            configFile = result[0].config_js;
-            strategyFile = result[0].strategy_js;
+            configFileOriginal = result[0].config_js;
+            strategyFileOriginal = result[0].strategy_js;
             grabBacktests();
         }
+    });
+}
+
+function preReserveBacktestsInDataBase(){
+    let ids = [];
+    select_result.forEach(function(item, index){
+        ids.push("id="+item.id);
+    });
+    ids = ids.join(" OR ");
+
+    mysql_conn = mysql.createConnection(mysql_conf);
+    mysql_conn.query('UPDATE backtests SET executed_at = NOW() WHERE '+ids, function(err){
+        mysql_conn.end();
+        if (err) throw err;
+        next();
     });
 }
 
@@ -61,7 +75,7 @@ function grabBacktests(){
         }else{
             console.log("initiating "+result.length+" backtests");
             select_result = result;
-            next();
+            preReserveBacktestsInDataBase();
         }
     });
 }
@@ -83,19 +97,25 @@ function run(configuration){
     console.log("backtest #"+(count+1));
     console.log("strat config: "+configuration.config_json);
 
+    let config_js = JSON.parse(configuration.config_json);
+
     //strategy file handling
+    let strategyFile = strategyFileOriginal;
     strategyFile = strategyFile.replace("{[input_dbhost]}", mysql_conf.host);
     strategyFile = strategyFile.replace("{[input_dbuser]}", mysql_conf.user);
     strategyFile = strategyFile.replace("{[input_dbpass]}", mysql_conf.password);
     strategyFile = strategyFile.replace("{[input_database]}", mysql_conf.database);
     strategyFile = strategyFile.replace("{[input_backtest_id]}",configuration.id);
+    strategyFile = strategyFile.replace("this.settings.entrance",config_js.entrance);
+    strategyFile = strategyFile.replace("this.settings.target",config_js.target);
+    strategyFile = strategyFile.replace("this.settings.loss",config_js.loss);
     fs.writeFileSync(GEKKO_DIR+'strategies/automated_strat.js',strategyFile, 'utf8');
 
-    let log = "DB_HOST="+mysql_conf.host+"\n";
-    log += "Config="+configuration.config_json;
-    fs.writeFileSync(GEKKO_DIR+'run.log', 'utf8');
+    //strategy file log
+    //fs.appendFileSync(APP_DIR+"__"+configuration.id+'.log', strategyFile, 'utf8');
 
     //config file handling
+    let configFile = configFileOriginal;
     configFile = configFile.replace("{[input_automatedStrat]}",configuration.config_json);
     fs.writeFileSync(GEKKO_DIR+'automated_config.js',configFile, 'utf8');
 
@@ -103,12 +123,14 @@ function run(configuration){
     mysql_conn.query('UPDATE backtests SET executed_at = NOW() WHERE id = '+configuration.id, function(err){
         mysql_conn.end();
         if (err) throw err;        
+        
         /*
         cmd.get('/usr/local/bin/node '+GEKKO_DIR+'gekko --config automated_config.js --backtest',function(err, data, stderr){
-            console.log('return:\n\n',data);
+            console.log('return:\n\n',data);            
         });
         */
         cmd.run('/usr/local/bin/node '+GEKKO_DIR+'gekko --config automated_config.js --backtest');
+
     });
 
 }
