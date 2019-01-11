@@ -27,8 +27,8 @@ let configFileOriginal = "";
     YOU CAN BALANCE THIS AJUSTING THE TIME BETWEEN EACH BACKTEST. 
 -----------------------------------------------------------------*/
 
-let process_limit = 4; //how many backtests one job should run
-let time_between_backtests = 15; //seconds between each backtest for one particular job
+let process_limit = 3; //how many backtests one job should run
+let time_between_backtests = 20; //seconds between each backtest for one particular job
 
 //--------------------------------------------------------------------------------------------*/
 
@@ -106,9 +106,9 @@ function run(configuration){
     strategyFile = strategyFile.replace("{[input_dbpass]}", mysql_conf.password);
     strategyFile = strategyFile.replace("{[input_database]}", mysql_conf.database);
     strategyFile = strategyFile.replace("{[input_backtest_id]}",configuration.id);
-    strategyFile = strategyFile.replace("this.settings.entrance",config_js.entrance);
-    strategyFile = strategyFile.replace("this.settings.target",config_js.target);
-    strategyFile = strategyFile.replace("this.settings.loss",config_js.loss);
+    //strategyFile = strategyFile.replace("this.settings.entrance",config_js.entrance);
+    //strategyFile = strategyFile.replace("this.settings.target",config_js.target);
+    //strategyFile = strategyFile.replace("this.settings.loss",config_js.loss);
     fs.writeFileSync(GEKKO_DIR+'strategies/automated_strat.js',strategyFile, 'utf8');
 
     //strategy file log

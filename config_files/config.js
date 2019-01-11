@@ -16,7 +16,7 @@ config.watch = {
 config.tradingAdvisor = {
   enabled: true,
   method: 'automated_strat',
-  candleSize: 1,
+  candleSize: 60,
   historySize: 0,
 }
 
